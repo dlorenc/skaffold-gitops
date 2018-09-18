@@ -1,0 +1,9 @@
+steps:
+- name: 'gcr.io/dlorenc-vmtest2/skaffold:latest'
+  args: ['gcloud', 'container', 'clusters', 'get-credentials', 'skaffold-demo', '--zone=us-central1-a']
+  env:
+  - 'KUBECONFIG=/workspace/.kubeconfig'
+- name: 'gcr.io/dlorenc-vmtest2/skaffold:latest'
+  args: ['skaffold', 'run', '-f', 'skaffold.yaml']
+  env:
+  - 'KUBECONFIG=/workspace/.kubeconfig'
