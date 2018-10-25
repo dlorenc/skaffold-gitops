@@ -1,19 +1,20 @@
 apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
 kind: Deployment
 metadata:
-  name: skaffold-demo
+  name: skaffold-gitops-demo
 spec:
   selector:
     matchLabels:
-      app: skaffold-demo
+      app: skaffold-gitops-demo
   replicas: 2 # tells deployment to run 2 pods matching the template
   template:
     metadata:
       labels:
-        app: skaffold-demo
+        app: skaffold-gitops-demo
     spec:
       containers:
       - name: app
-        image: gcr.io/dlorenc-vmtest2/skaffold-demo
+        image: gcr.io/dlorenc-vmtest2/skaffold-gitops-demo
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000

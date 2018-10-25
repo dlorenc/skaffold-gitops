@@ -2,7 +2,7 @@ apiVersion: skaffold/v1alpha2
 kind: Config
 build:
   artifacts:
-  - imageName: gcr.io/dlorenc-vmtest2/skaffold-demo
+  - imageName: gcr.io/dlorenc-vmtest2/skaffold-gitops-demo
 deploy:
   kubectl:
     manifests:
