@@ -1,0 +1,47 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: run-tests
+spec:
+  inputs:
+    resources:
+    - name: repo
+      type: git
+    - name: pr
+      type: pullRequest
+  outputs:
+    resources:
+    - name: pr
+      type: pullRequest
+  steps:
+  - name: set
+    image: ubuntu
+    command: ['bash']
+    args:
+    - -c
+    - |
+        set -ex
+        cp -r /workspace/pr/ /workspace/output/
+
+        set +e
+        out=$(/workspace/repo/test.sh 2>&1)
+        exit_code=$?
+        set -e
+
+        if [[ $exit_code -ne 0 ]]; then
+          code="failure"
+          echo "Test failure!" > /workspace/output/pr/comments/new
+          echo "Logs:" >> /workspace/output/pr/comments/new
+          echo $out >> /workspace/output/pr/comments/new
+        else
+          code="success"
+        fi
+        cat <<EOF > /workspace/output/pr/status/tekton.json
+        {
+          "ID": "tekton",
+          "Code": "$code",
+          "Description": "Tekton is running"
+        }
+        EOF
+        find /workspace/
+
