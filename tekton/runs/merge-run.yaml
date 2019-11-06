@@ -1,0 +1,21 @@
+apiVersion: tekton.dev/v1alpha1
+kind: TaskRun
+metadata:
+  generateName: merge-pr-
+spec:
+  taskRef:
+    name: merge-pr
+  inputs:
+    resources:
+    - name: repo
+      resourceSpec:
+        type: git
+        params:
+        - name: url
+          value: https://github.com/dlorenc/skaffold-gitops
+    - name: pr
+      resourceSpec:
+        type: pullRequest
+        params:
+        - name: url
+          value: https://github.com/dlorenc/skaffold-gitops/pull/3
