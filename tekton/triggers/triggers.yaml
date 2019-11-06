@@ -91,6 +91,42 @@ spec:
         - name: pr
           resourceRef:
             name: pr-$(uid)
+  - apiVersion: tekton.dev/v1alpha1
+    kind: TaskRun
+    metadata:
+      generateName: lgtm-
+    spec:
+      taskRef:
+        name: lgtm
+      inputs:
+        resources:
+        - name: repo
+          resourceSpec:
+            type: git
+            params:
+            - name: url
+              value: $(params.gitrepositoryurl)
+        - name: pr
+          resourceSpec:
+            type: pullRequest
+            params:
+            - name: url
+              value: https://github.com/$(params.repo)/pulls/$(params.pullrequestnum)
+        params:
+        - name: author
+          value: "dlorenc" # from the githubtoken
+      outputs:
+        resources:
+        - name: pr
+          resourceSpec:
+            type: pullRequest
+            params:
+            - name: url
+              value: https://github.com/$(params.repo)/pulls/$(params.pullrequestnum)
+            secrets:
+            - secretName: githubtoken
+              secretKey: token
+              fieldName: authToken
 ---
 apiVersion: tekton.dev/v1alpha1
 kind: EventListener
