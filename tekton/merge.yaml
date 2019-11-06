@@ -18,9 +18,20 @@ spec:
     - |
         set -ex
         if [ ! -f /workspace/pr/labels/lgtm ]; then
-          "No lgtm label detected. Not merging."
+          echo "No lgtm label detected. Not merging."
           exit 0
         fi
+        
+        for status in /workspace/pr/status/*
+        do
+          code=$(python -c "import json; print json.load(open('$status', 'r'))['Code']")
+          if [ "${code}" != "success" ]; then
+            echo "Not all status checks are passing. Not merging."
+            echo $status
+            cat $status
+            exit 0
+          fi
+        done
 
         repo=$(python -c "import json; print json.load(open('/workspace/pr/head.json', 'r'))['Repo']")
         baserepo=$(python -c "import json; print json.load(open('/workspace/pr/base.json', 'r'))['Repo']")
@@ -29,13 +40,15 @@ spec:
         git config --global user.email "tekton@tekton.dev"
         git config --global user.name "Tekton Bot"
         cd /workspace/repo
-
         if [ "${baserepo}" == "${repo}" ]; then
           git fetch
-          git checkout -b $branch origin/$branch
-          git merge master --message="Merge branch '$branch'"
           git checkout master
-          git merge --no-ff $branch
+          git log
+          git checkout -b $branch origin/$branch
+          git log
+          git merge master
+          git checkout master
+          git merge --no-ff $branch --message "merging"
         else
           git checkout -b pr master
           git pull $repo $branch

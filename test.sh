@@ -1,3 +1,3 @@
 #!/bin/bash
-echo "this test is failing!"
-exit 1
+echo "this test is passing!"
+exit 0
