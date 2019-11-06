@@ -1,0 +1,30 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: merge-pr
+spec:
+  inputs:
+    resources:
+    - name: repo
+      type: git
+    params:
+    - name: forkRepo
+      type: string
+    - name: forkBranch
+      type: string
+  steps:
+  - name: merge
+    image: gcr.io/cloud-builders/git
+    command: ['bash']
+    args:
+    - -c
+    - |
+        set -ex
+        git config --global user.email "tekton@tekton.dev"
+        git config --global user.name "Tekton Bot"
+        cd /workspace/repo
+        git checkout -b pr master
+        git pull $(inputs.params.forkRepo) $(inputs.params.forkBranch)
+        git checkout master
+        git merge --no-ff pr
+        git push origin master
