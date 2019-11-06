@@ -42,7 +42,6 @@ spec:
         cd /workspace/repo
         if [ "${baserepo}" == "${repo}" ]; then
           git fetch
-          git checkout master
           git checkout -b $branch origin/$branch
           git merge master
           git checkout master
