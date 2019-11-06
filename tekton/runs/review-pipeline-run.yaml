@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  generateName: review-
+spec:
+  pipelineRef:
+    name: review
+  resources:
+  - name: repo
+    resourceSpec:
+      type: git
+      params:
+      - name: url
+        value: https://github.com/dlorenc/skaffold-gitops
+  - name: pr
+    resourceSpec:
+      type: pullRequest
+      params:
+      - name: url
+        value: https://github.com/dlorenc/skaffold-gitops/pull/1
+      secrets:
+      - secretName: githubtoken
+        secretKey: token
+        fieldName: authToken
