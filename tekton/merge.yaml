@@ -33,7 +33,7 @@ spec:
         if [ "${baserepo}" == "${repo}" ]; then
           git fetch
           git checkout -b $branch origin/$branch
-          git merge master
+          git merge master --message="Merge branch '$branch'"
           git checkout master
           git merge --no-ff $branch
         else
