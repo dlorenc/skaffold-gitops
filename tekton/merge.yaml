@@ -1,0 +1,58 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: merge-pr
+spec:
+  inputs:
+    resources:
+    - name: repo
+      type: git
+    - name: pr
+      type: pullRequest
+  steps:
+  - name: merge
+    image: gcr.io/cloud-builders/git
+    command: ['bash']
+    args:
+    - -c
+    - |
+        set -ex
+        if [ ! -f /workspace/pr/labels/lgtm ]; then
+          echo "No lgtm label detected. Not merging."
+          exit 0
+        fi
+        
+        for status in /workspace/pr/status/*
+        do
+          code=$(python -c "import json; print json.load(open('$status', 'r'))['Code']")
+          if [ "${code}" != "success" ]; then
+            echo "Not all status checks are passing. Not merging."
+            echo $status
+            cat $status
+            exit 0
+          fi
+        done
+
+        repo=$(python -c "import json; print json.load(open('/workspace/pr/head.json', 'r'))['Repo']")
+        baserepo=$(python -c "import json; print json.load(open('/workspace/pr/base.json', 'r'))['Repo']")
+        branch=$(python -c "import json; print json.load(open('/workspace/pr/head.json', 'r'))['Branch']")
+
+        git config --global user.email "tekton@tekton.dev"
+        git config --global user.name "Tekton Bot"
+        cd /workspace/repo
+        if [ "${baserepo}" == "${repo}" ]; then
+          git fetch
+          git checkout master
+          git log
+          git checkout -b $branch origin/$branch
+          git log
+          git merge master
+          git checkout master
+          git merge --no-ff $branch --message "merging"
+        else
+          git checkout -b pr master
+          git pull $repo $branch
+          git checkout master
+          git merge --no-ff pr
+        fi
+        git push origin master

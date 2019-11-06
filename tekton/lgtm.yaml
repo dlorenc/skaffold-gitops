@@ -1,0 +1,37 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: lgtm
+spec:
+  inputs:
+    resources:
+    - name: repo
+      type: git
+    - name: pr
+      type: pullRequest
+    params:
+    - name: author
+      type: string
+  outputs:
+    resources:
+    - name: pr
+      type: pullRequest
+  steps:
+  - name: label
+    image: gcr.io/jonjohnson/tekton/lgtm
+    command: ['bash']
+    args:
+    - -c
+    - |
+        set -ex
+
+        cp -r /workspace/pr/ /workspace/output/
+
+        # If any comment contains /lgtm, add an "lgtm" label.
+        for COMMENT in $(find /workspace/pr/comments -type f | grep ".json"); do
+          TEXT=$(cat $COMMENT | jq .Text -r)
+          if [[ $TEXT == *"/lgtm"* ]]; then
+            echo "Adding lgtm label due to comment: $TEXT"
+            touch /workspace/output/pr/labels/lgtm
+          fi
+        done
