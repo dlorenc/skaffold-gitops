@@ -43,6 +43,15 @@ spec:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource
     metadata:
+      name: git-master-$(uid)
+    spec:
+      type: git
+      params:
+      - name: url
+        value: $(params.gitrepositoryurl)
+  - apiVersion: tekton.dev/v1alpha1
+    kind: PipelineResource
+    metadata:
       name: pr-$(uid)
     spec:
       type: pullRequest
@@ -78,7 +87,7 @@ spec:
         resources:
         - name: repo
           resourceRef:
-            name: git-source-$(uid)
+            name: git-master-$(uid)
         - name: pr
           resourceRef:
             name: pr-$(uid)
