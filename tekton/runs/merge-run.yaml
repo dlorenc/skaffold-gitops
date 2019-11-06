@@ -13,8 +13,9 @@ spec:
         params:
         - name: url
           value: https://github.com/dlorenc/skaffold-gitops
-    params:
-    - name: forkRepo
-      value: https://github.com/dlorenc/skaffold-gitops
-    - name: forkBranch
-      value: pr
+    - name: pr
+      resourceSpec:
+        type: pullRequest
+        params:
+        - name: url
+          value: https://github.com/dlorenc/skaffold-gitops/pull/3

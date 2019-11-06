@@ -67,6 +67,21 @@ spec:
       - name: pr
         resourceRef:
           name: pr-$(uid)
+  - apiVersion: tekton.dev/v1alpha1
+    kind: TaskRun
+    metadata:
+      generateName: merge-
+    spec:
+      taskRef:
+        name: merge-pr
+      inputs:
+        resources:
+        - name: repo
+          resourceRef:
+            name: git-source-$(uid)
+        - name: pr
+          resourceRef:
+            name: pr-$(uid)
 ---
 apiVersion: tekton.dev/v1alpha1
 kind: EventListener
