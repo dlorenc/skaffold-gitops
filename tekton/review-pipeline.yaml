@@ -1,0 +1,40 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: review
+spec:
+  resources:
+  - name: repo
+    type: git
+  - name: pr
+    type: pullRequest
+  tasks:
+  - name: setstatus
+    taskRef:
+      name: set-status
+    resources:
+      inputs:
+      - name: repo
+        resource: repo
+      - name: pr
+        resource: pr
+      outputs:
+      - name: pr
+        resource: pr
+    params:
+    - name: status
+      value: "in_progress"
+  - name: test
+    runAfter: [setstatus]
+    taskRef:
+      name: run-tests
+    resources:
+      inputs:
+      - name: repo
+        resource: repo
+      - name: pr
+        resource: pr
+      outputs:
+      - name: pr
+        resource: pr
+      

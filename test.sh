@@ -1,2 +1,3 @@
 #!/bin/bash
-echo 0
+echo "this test is failing!"
+exit 1

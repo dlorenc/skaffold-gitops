@@ -1,0 +1,35 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: set-status
+spec:
+  inputs:
+    resources:
+    - name: repo
+      type: git
+    - name: pr
+      type: pullRequest
+    params:
+    - name: status
+      type: string
+  outputs:
+    resources:
+    - name: pr
+      type: pullRequest
+  steps:
+  - name: set
+    image: ubuntu
+    command: ['bash']
+    args:
+    - -c
+    - |
+        set -ex
+        cp -r /workspace/pr/ /workspace/output/
+        cat <<EOF > /workspace/output/pr/status/status.json
+        {
+          "ID": "tekton",
+          "Code": "$(inputs.params.status)",
+          "Description": "Tekton is running"
+        }
+        EOF
+

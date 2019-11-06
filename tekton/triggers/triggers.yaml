@@ -1,0 +1,82 @@
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: review-pipeline-binding
+spec:
+  params:
+  - name: gitrevision
+    value: $(body.pull_request.head.sha)
+  - name: gitrepositoryurl
+    value: $(body.pull_request.head.repo.clone_url)
+  - name: pullrequestnum
+    value: $(body.number)
+  - name: repo
+    value: $(body.pull_request.head.repo.full_name)
+---
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: review-pipeline-template
+spec:
+  params:
+  - name: gitrevision
+    description: The git revision
+    default: master
+  - name: gitrepositoryurl
+    description: The git repository url
+  - name: pullrequestnum
+    description: The number to the PR
+  - name: repo
+    description: The repo to the PR
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1alpha1
+    kind: PipelineResource
+    metadata:
+      name: git-source-$(uid)
+    spec:
+      type: git
+      params:
+      - name: revision
+        value: $(params.gitrevision)
+      - name: url
+        value: $(params.gitrepositoryurl)
+  - apiVersion: tekton.dev/v1alpha1
+    kind: PipelineResource
+    metadata:
+      name: pr-$(uid)
+    spec:
+      type: pullRequest
+      params:
+      - name: url
+        value: https://github.com/$(params.repo)/pulls/$(params.pullrequestnum)
+      secrets:
+      - secretName: githubtoken
+        secretKey: token
+        fieldName: authToken
+  - apiVersion: tekton.dev/v1alpha1
+    kind: PipelineRun
+    metadata:
+      generateName: review-run-
+    spec:
+      pipelineRef:
+        name: review
+      resources:
+      - name: repo
+        resourceRef:
+          name: git-source-$(uid)
+      - name: pr
+        resourceRef:
+          name: pr-$(uid)
+---
+apiVersion: tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: listener-interceptor
+spec:
+  serviceType: LoadBalancer
+  triggers:
+    - name: pr-trig
+      binding:
+        name: review-pipeline-binding
+      template:
+        name: review-pipeline-template
