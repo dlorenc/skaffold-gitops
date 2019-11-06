@@ -43,16 +43,17 @@ spec:
         if [ "${baserepo}" == "${repo}" ]; then
           git fetch
           git checkout master
-          git log
           git checkout -b $branch origin/$branch
-          git log
           git merge master
           git checkout master
           git merge --no-ff $branch --message "merging"
+          git push origin master
         else
-          git checkout -b pr master
-          git pull $repo $branch
+          git remote add downstream "${baserepo}"
+          git fetch downstream
+          git checkout -b pr downstream/master
+          git pull origin $branch
           git checkout master
-          git merge --no-ff pr
+          git merge --no-ff pr --message "merging"
+          git push downstream master
         fi
-        git push origin master
