@@ -11,7 +11,16 @@ spec:
   - name: pullrequestnum
     value: $(body.number)
   - name: repo
-    value: $(body.pull_request.head.repo.full_name)
+    value: $(body.pull_request.base.repo.full_name)
+---
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: comment-pipeline-binding
+spec:
+  params:
+  - name: repo
+    value: $(body.issue.html_url)
 ---
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerTemplate
@@ -91,6 +100,16 @@ spec:
         - name: pr
           resourceRef:
             name: pr-$(uid)
+---
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: comment-pipeline-template
+spec:
+  params:
+  - name: repo
+    description: The repo to the PR
+  resourcetemplates:
   - apiVersion: tekton.dev/v1alpha1
     kind: TaskRun
     metadata:
@@ -100,18 +119,12 @@ spec:
         name: lgtm
       inputs:
         resources:
-        - name: repo
-          resourceSpec:
-            type: git
-            params:
-            - name: url
-              value: $(params.gitrepositoryurl)
         - name: pr
           resourceSpec:
             type: pullRequest
             params:
             - name: url
-              value: https://github.com/$(params.repo)/pulls/$(params.pullrequestnum)
+              value: $(params.repo)
         params:
         - name: author
           value: "dlorenc" # from the githubtoken
@@ -122,7 +135,7 @@ spec:
             type: pullRequest
             params:
             - name: url
-              value: https://github.com/$(params.repo)/pulls/$(params.pullrequestnum)
+              value: $(params.repo)
             secrets:
             - secretName: githubtoken
               secretKey: token
@@ -140,3 +153,8 @@ spec:
         name: review-pipeline-binding
       template:
         name: review-pipeline-template
+    - name: comment-trig
+      binding:
+        name: comment-pipeline-binding
+      template:
+        name: comment-pipeline-template
