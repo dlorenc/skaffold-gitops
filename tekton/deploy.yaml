@@ -1,0 +1,22 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: run-tests
+spec:
+  inputs:
+    resources:
+    - name: repo
+      type: git
+    - name: cluster
+      type: cluster
+  steps:
+  - name: deploy
+    image: gcr.io/dlorenc-vmtest2/skaffold:latest
+    command: ['skaffold']
+    args:
+    - run
+    - -f
+    - /workspace/repo/skaffold.yaml
+    env:
+    - name: KUBECONFIG
+      value: $(inputs.resources.cluster.name)/kubeconfig
