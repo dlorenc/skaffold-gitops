@@ -148,13 +148,19 @@ metadata:
 spec:
   serviceType: LoadBalancer
   triggers:
-    - name: pr-trig
-      binding:
-        name: review-pipeline-binding
-      template:
-        name: review-pipeline-template
-    - name: comment-trig
-      binding:
-        name: comment-pipeline-binding
-      template:
-        name: comment-pipeline-template
+  - name: pr-trig
+    interceptor:
+      github:
+        eventType: pull_request
+    bindings:
+      - name: review-pipeline-binding
+    template:
+      name: review-pipeline-template
+  - name: comment-trig
+    interceptor:
+      github:
+        eventType: issue_comment
+    bindings:
+      - name: comment-pipeline-binding
+    template:
+      name: comment-pipeline-template

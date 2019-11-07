@@ -39,7 +39,9 @@ spec:
 
         git config --global user.email "tekton@tekton.dev"
         git config --global user.name "Tekton Bot"
+
         cd /workspace/repo
+        git pull origin master --unshallow
         if [ "${baserepo}" == "${repo}" ]; then
           git fetch
           git checkout -b $branch origin/$branch
