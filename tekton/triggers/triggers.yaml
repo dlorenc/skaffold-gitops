@@ -23,6 +23,17 @@ spec:
     value: $(body.issue.html_url)
 ---
 apiVersion: tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: deploy-pipeline-binding
+spec:
+  params:
+  - name: branch
+    value: $(body.ref)
+  - name: repo
+    value: $(body.repository.html_url)
+---
+apiVersion: tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
   name: review-pipeline-template
@@ -142,6 +153,42 @@ spec:
               fieldName: authToken
 ---
 apiVersion: tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: deploy-pipeline-template
+spec:
+  params:
+  - name: branch
+    description: The branch to the push
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1alpha1
+    kind: TaskRun
+    metadata:
+      generateName: deploy-
+    spec:
+      taskRef:
+        name: deploy
+      inputs:
+        resources:
+        - name: repo
+          resourceSpec:
+            type: git
+            params:
+            - name: url
+              value: $(params.repo)
+        params:
+        - name: branch
+          value: $(params.branch)
+      outputs:
+        resources:
+        - name: image
+          resourceSpec:
+            type: image
+            params:
+            - name: url
+              value: gcr.io/dlorenc-vmtest2/foo
+---
+apiVersion: tekton.dev/v1alpha1
 kind: EventListener
 metadata:
   name: listener-interceptor
@@ -164,3 +211,11 @@ spec:
       - name: comment-pipeline-binding
     template:
       name: comment-pipeline-template
+  - name: deploy-trig
+    interceptor:
+      github:
+        eventType: push
+    bindings:
+      - name: deploy-pipeline-binding
+    template:
+      name: deploy-pipeline-template
