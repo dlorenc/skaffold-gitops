@@ -22,16 +22,18 @@ spec:
           exit 0
         fi
         
-        for status in /workspace/pr/status/*
-        do
-          code=$(python -c "import json; print json.load(open('$status', 'r'))['Code']")
-          if [ "${code}" != "success" ]; then
-            echo "Not all status checks are passing. Not merging."
-            echo $status
-            cat $status
-            exit 0
-          fi
-        done
+        if compgen -G "/workspace/pr/status/*"; then
+          for status in /workspace/pr/status/*
+          do
+            code=$(python -c "import json; print json.load(open('$status', 'r'))['Code']")
+            if [ "${code}" != "success" ]; then
+              echo "Not all status checks are passing. Not merging."
+              echo $status
+              cat $status
+              exit 0
+            fi
+          done
+        fi
 
         repo=$(python -c "import json; print json.load(open('/workspace/pr/head.json', 'r'))['Repo']")
         baserepo=$(python -c "import json; print json.load(open('/workspace/pr/base.json', 'r'))['Repo']")
@@ -41,6 +43,8 @@ spec:
         git config --global user.name "Tekton Bot"
         cd /workspace/repo
         git pull origin master --unshallow
+        cat $HOME/.gitconfig
+        cat $HOME/.git-credentials
         if [ "${baserepo}" == "${repo}" ]; then
           git fetch
           git checkout -b $branch origin/$branch

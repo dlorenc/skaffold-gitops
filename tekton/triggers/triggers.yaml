@@ -8,10 +8,12 @@ spec:
     value: $(body.pull_request.head.sha)
   - name: gitrepositoryurl
     value: $(body.pull_request.head.repo.clone_url)
-  - name: pullrequestnum
-    value: $(body.number)
+  - name: prurl
+    value: $(body.pull_request.html_url)
   - name: repo
     value: $(body.pull_request.base.repo.full_name)
+  - name: source
+    value: github
 ---
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerBinding
@@ -21,6 +23,8 @@ spec:
   params:
   - name: repo
     value: $(body.issue.html_url)
+  - name: source
+    value: github
 ---
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerBinding
@@ -33,6 +37,47 @@ spec:
   - name: repo
     value: $(body.repository.html_url)
 ---
+
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: deploy-pipeline-binding-gitlab
+spec:
+  params:
+  - name: branch
+    value: $(body.ref)
+  - name: repo
+    value: $(body.repository.git_http_url)
+---
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: review-pipeline-binding-gitlab
+spec:
+  params:
+  - name: gitrevision
+    value: $(body.object_attributes.last_commit.id)
+  - name: gitrepositoryurl
+    value: $(body.object_attributes.source.git_http_url)
+  - name: prurl
+    value: $(body.object_attributes.url)
+  - name: repo
+    value: $(body.object_attributes.target.git_http_url)
+  - name: source
+    value: gitlab
+---
+apiVersion: tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: comment-pipeline-binding-gitlab
+spec:
+  params:
+  - name: repo
+    value: $(body.merge_request.source.web_url)/merge_requests/$(body.merge_request.iid)
+  - name: source
+    value: gitlab
+---
+
 apiVersion: tekton.dev/v1alpha1
 kind: TriggerTemplate
 metadata:
@@ -44,10 +89,12 @@ spec:
     default: master
   - name: gitrepositoryurl
     description: The git repository url
-  - name: pullrequestnum
-    description: The number to the PR
+  - name: prurl
+    description: The url to the PR
   - name: repo
     description: The repo to the PR
+  - name: source
+    description: github or gitlab
   resourcetemplates:
   - apiVersion: tekton.dev/v1alpha1
     kind: PipelineResource
@@ -77,9 +124,9 @@ spec:
       type: pullRequest
       params:
       - name: url
-        value: https://github.com/$(params.repo)/pulls/$(params.pullrequestnum)
+        value: $(params.prurl)
       secrets:
-      - secretName: githubtoken
+      - secretName: $(params.source)token
         secretKey: token
         fieldName: authToken
   - apiVersion: tekton.dev/v1alpha1
@@ -120,6 +167,8 @@ spec:
   params:
   - name: repo
     description: The repo to the PR
+  - name: source
+    description: github or gitlab
   resourcetemplates:
   - apiVersion: tekton.dev/v1alpha1
     kind: TaskRun
@@ -136,6 +185,10 @@ spec:
             params:
             - name: url
               value: $(params.repo)
+            secrets:
+            - secretName: $(params.source)token
+              secretKey: token
+              fieldName: authToken
         params:
         - name: author
           value: "dlorenc" # from the githubtoken
@@ -148,7 +201,7 @@ spec:
             - name: url
               value: $(params.repo)
             secrets:
-            - secretName: githubtoken
+            - secretName: $(params.source)token
               secretKey: token
               fieldName: authToken
 ---
@@ -219,3 +272,29 @@ spec:
       - name: deploy-pipeline-binding
     template:
       name: deploy-pipeline-template
+
+  - name: pr-trig-gitlab
+    interceptor:
+      gitlab:
+        eventType: Merge Request Hook
+    bindings:
+      - name: review-pipeline-binding-gitlab
+    template:
+      name: review-pipeline-template
+  - name: comment-trig-gitlab
+    interceptor:
+      gitlab:
+        eventType: Note Hook
+    bindings:
+      - name: comment-pipeline-binding-gitlab
+    template:
+      name: comment-pipeline-template
+  - name: deploy-trig-gitlab
+    interceptor:
+      gitlab:
+        eventType: Push Hook
+    bindings:
+      - name: deploy-pipeline-binding-gitlab
+    template:
+      name: deploy-pipeline-template
+  
