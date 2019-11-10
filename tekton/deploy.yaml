@@ -23,7 +23,6 @@ spec:
       set -ex
       env
       gcloud auth configure-docker -q
-      gcloud info
       if [ $(inputs.params.branch) != "refs/heads/master" ]; then
         exit 0
       fi

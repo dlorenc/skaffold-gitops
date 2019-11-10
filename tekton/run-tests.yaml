@@ -43,5 +43,3 @@ spec:
           "Description": "Tekton is running"
         }
         EOF
-        find /workspace/
-
